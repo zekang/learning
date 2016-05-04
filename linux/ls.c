@@ -5,6 +5,7 @@
 #include<fcntl.h>
 #include<string.h>
 #include<time.h>
+#include<dirent.h>
 
 #define TYPE_USERNAME 1
 #define TYPE_GROUPNAME 2
@@ -77,6 +78,9 @@ int get_name(int type,int id,char *output ,int size) /*{{{*/
 			}
 		}
 	}while(1);
+	if(fd>0){
+		close(fd);
+	}
 	return ret;	
 }/*}}}*/
 
@@ -127,15 +131,12 @@ int format_access(mode_t mode,char *buf /*output*/,int count)/*{{{*/
 	return 0;
 }/*}}}*/
 
-void display_file(const char *path)/*{{{*/
+void display_stat(struct stat *pst,const char *path)/*{{{*/
 {
 	struct stat st;
 	char buf[1024];
 	struct tm mytm;
-	if(lstat(path,&st) ==  -1){
-		perror("stat");
-		return;
-	}
+	st = *pst;
 	format_access(st.st_mode,buf,12);	
 	printf(buf);
 	printf(" %d",st.st_nlink);
@@ -153,6 +154,39 @@ void display_file(const char *path)/*{{{*/
 	printf("\n");
 }/*}}}*/
 
+void dir_walk(const char *path)/*{{{*/
+{
+	struct stat st;
+	char path_buf[256];
+	DIR *dir;
+	struct dirent *entry;
+	if(lstat(path,&st) == -1){
+		perror("lstat");
+		return;
+	}
+	if(S_ISDIR(st.st_mode)){
+		dir = opendir(path);		
+		if(dir == NULL){
+			perror("opendir");
+			return;
+		}
+		while ((entry = readdir(dir)) != NULL){
+			if(strcmp(entry->d_name,".")==0 || strcmp(entry->d_name,"..")==0){
+				continue;
+			}
+			if(path[strlen(path)-1] != '/'){
+					sprintf(path_buf,"%s/%s",path,entry->d_name);
+			}else{
+					sprintf(path_buf,"%s%s",path,entry->d_name);
+			}
+			dir_walk(path_buf);
+		}
+		closedir(dir);
+	}
+	if(strcmp(path,".")!=0 && strcmp(path,"..")!=0){
+			display_stat(&st,path);
+	}
+}/*}}}*/
 
 
 
@@ -160,7 +194,7 @@ int main(int argc,char *argv[])
 {
 	int i ;
 	for(i = 1;i<argc;i++){
-			display_file(argv[i]);
+			dir_walk(argv[i]);
 	}
 	return 0;
 }
