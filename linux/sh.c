@@ -65,7 +65,7 @@ int main(int argc,char *argv[])
 		int i,j;
 		setenv("PATH",".",1);
 		do{
-				printf("Command:");
+				printf("[you shell]# ");
 				fgets(buf,sizeof(buf),stdin);
 				len = strlen(buf);
 				buf[len-1] = '\0';
@@ -73,6 +73,10 @@ int main(int argc,char *argv[])
 					break;
 				}
 				if(len< 2 || (format_input(buf,child_argv,sizeof(child_argv)) == -1)){
+					continue;
+				}
+				if(access(child_argv[0],F_OK | X_OK) == -1){
+					printf("you shell : %s command not found\n",child_argv[0]);
 					continue;
 				}
 				pid = fork();
