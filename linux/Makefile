@@ -5,7 +5,7 @@ all:
 	gcc -g chown.c -o chown 
 	gcc -g touch.c -o touch 
 	gcc -g stat.c lib.c -o stat 
-	gcc -g sh.c -o sh
+	gcc -g sh.c lib.c -o sh
 clean:
 	rm -f ls
 	rm -f chmod
