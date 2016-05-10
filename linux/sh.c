@@ -82,7 +82,7 @@ int simple_command(const char *command) /*{{{*/
 		return ret;
 }/*}}}*/
 
-void input(char *buf,int size)
+void input(char *buf,int size) /*{{{ */
 {
 		int len = 0;
 		char dir_buf[256]={0};
@@ -98,7 +98,7 @@ void input(char *buf,int size)
 				if(len>=2)
 					break;
 		} while(1);
-}
+}/*}}}*/
 
 int main(int argc,char *argv[])
 {
