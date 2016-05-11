@@ -117,7 +117,7 @@ int server_user_lookup(USER **users,int count,const char *username)/*{{{*/
 		USER *user;
 		for(i;i<count;i++){
 				user = users[i];
-				if(strcmp(user->name,username) == 0){
+				if(user!= NULL && (strcmp(user->name,username) == 0)){
 						return i;
 				}
 		}
@@ -173,7 +173,7 @@ int server_run(USER **users,int count,int fd) /*{{{*/
 								strcpy(msg.data,"login success\n");
 								strcpy(msg.dest,msg.src);
 								strcpy(msg.src,"sys");
-								write((users[num])->fd,&msg);
+								write((users[num])->fd,&msg,sizeof(MSG));
 								num++;
 						}
 				}else if(IS_LOGOUT(&msg)){
@@ -188,7 +188,7 @@ int server_run(USER **users,int count,int fd) /*{{{*/
 						index = server_user_lookup(users,count,msg.dest); 
 						chat_error(CHAT_DEBUG,"content message received \n");
 						if(index>-1 && users[index] != NULL){		
-								write((users[index])->fd,&msg);
+								write((users[index])->fd,&msg,sizeof(MSG));
 						}else{
 							chat_error(CHAT_DEBUG,"user %s not found\n",msg.dest);
 						}

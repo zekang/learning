@@ -61,3 +61,8 @@ int chat_ensure_fifo(const char *filename,int mode) /*{{{*/
 		}
 		return fd;
 }/*}}}*/
+
+
+int set_nonblock(int fd)/*{{{*/
+{
+}/*}}}*/
