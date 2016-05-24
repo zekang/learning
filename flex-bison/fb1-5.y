@@ -1,25 +1,27 @@
 %{
 #include<stdio.h>
 #include<stdlib.h>
-extern int yyval;
 %}
 %token NUMBER 
 %token ADD SUB MUL DIV ABS
-%token EOL
+%token EOL LB RB
 %%
 calclist: 
-		| calclist expr EOL {printf("=%d\n",$2);}
+		| calclist expr EOL {
+			printf("=%d\n",$2);
+		}
 		;
 expr: factor 		  { $$ = $1 ;}
-	| expr ADD factor { $$ = $1 + $3 ;printf("here:%d+%d\n",$1,$3);}
+	| expr ADD factor { $$ = $1 + $3 ;}
 	| expr SUB factor { $$ = $1 - $3 ;}
 	;
 factor:term 		  { $$ = $1 ;}
 	| factor MUL term { $$ = $1 * $3 ;}
 	| factor DIV term { $$ = $1 / $3 ;}
 	;
-term: NUMBER   { $$ = $1 ;printf("NUMBER:%d\n",$1);}
+term: NUMBER   { $$ = $1 ;}
 	| ABS term { $$ = $2 > 0 ? $2 : -$2;}
+	| LB expr RB { $$ = $2 ;}
 	;
 %%
 int yyerror(char *err)

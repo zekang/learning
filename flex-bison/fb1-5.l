@@ -3,33 +3,18 @@
 int yylval;
 %}
 %%
-"+" {
-	printf("op:%d\n",ADD);
-	return ADD;
-}
-"-" {
-	return SUB;
-}
-"*" {
-	return MUL;
-}
-"/" {
-	return DIV;
-}
-"|" {
-	return ABS;
-}
+"+" { return ADD; }
+"-" { return SUB; }
+"*" { return MUL; }
+"/" { return DIV; }
+"|" { return ABS; }
+"(" { return LB; }
+")" { return RB; }
 [0-9]+ {
 	yylval = atoi(yytext);
-	printf("number:%d\n",yylval);
 	return NUMBER;
 }
-[ \t] {
-}
-\n {
-	return EOL;
-}
-. {
-	printf("unknown character:%s\n",yytext);
-}
+[ \t] { }
+\n { return EOL; }
+. { printf("unknown character:%s\n",yytext); }
 %%
