@@ -88,7 +88,7 @@ int run(Config *config)
 	return 0;
 }
 
-int main(int argc, char *argv[])
+int main_socket(int argc, char *argv[])
 {
 	//run();
 	int ret;
