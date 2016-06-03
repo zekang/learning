@@ -98,29 +98,51 @@ int main(int argc, char *argv[])
 	serv_addr.sin_port = htons(9000);
 	serv_addr.sin_family = AF_INET;
 	socketCli = socket(AF_INET, SOCK_STREAM, 0);
-	connect(socketCli, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+	if (connect(socketCli, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == INVALID_SOCKET){
+		printf("connect error\n");
+		system("pause");
+		return -1;
+	}
  
 	buildPacket(FCGI_BEGIN_REQUEST, content , sizeof(content), 1, buf, &buf_len);
 	memcpy(sendBuf + pos, buf, buf_len);
 	pos += buf_len;
 	
-	buildNvpair("REQUEST_METHOD", "GET", buf, &buf_len);
+	buildNvpair("REQUEST_METHOD", "POST", buf, &buf_len);
 	memcpy(paramBuf + param_pos, buf, buf_len);
 	param_pos += buf_len;
 
-	buildNvpair("SCRIPT_FILENAME", "d:/www/test.php", buf, &buf_len);
+	buildNvpair("SCRIPT_FILENAME", "d:/www/a.php", buf, &buf_len);
 	memcpy(paramBuf + param_pos, buf, buf_len);
 	param_pos += buf_len;
+
+	buildNvpair("QUERY_STRING", "a=1&b=2", buf, &buf_len);
+	memcpy(paramBuf + param_pos, buf, buf_len);
+	param_pos += buf_len;
+
+	buildNvpair("CONTENT_TYPE", "application/x-www-form-urlencoded", buf, &buf_len);
+	memcpy(paramBuf + param_pos, buf, buf_len);
+	param_pos += buf_len;
+
+	buildNvpair("CONTENT_LENGTH", "7", buf, &buf_len);
+	memcpy(paramBuf + param_pos, buf, buf_len);
+	param_pos += buf_len;
+	
+	buildNvpair("PATH_INFO", "/", buf, &buf_len);
+	memcpy(paramBuf + param_pos, buf, buf_len);
+	param_pos += buf_len;
+
 
 	buildPacket(FCGI_PARAMS, paramBuf, param_pos, 1, buf, &buf_len);
 	memcpy(sendBuf + pos, buf, buf_len);
 	pos += buf_len;
 
+	
 	buildPacket(FCGI_PARAMS, "", 0, 1, buf, &buf_len);
 	memcpy(sendBuf + pos, buf, buf_len);
 	pos += buf_len;
 	
-	buildPacket(FCGI_STDIN, "", 0, 1, buf, &buf_len);
+	buildPacket(FCGI_STDIN, "c=3&d=4", 7, 1, buf, &buf_len);
 	memcpy(sendBuf + pos, buf, buf_len);
 	pos += buf_len;
 
