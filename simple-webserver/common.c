@@ -269,6 +269,7 @@ int process_request(SOCKET socket, char *head,Config *server)
 		return 0 ;
 	}
 
+
 	//根据后缀计算content-type
 	pos = strrchr(buf, '.');
 	if (pos != NULL && strlen(pos) > 1) {

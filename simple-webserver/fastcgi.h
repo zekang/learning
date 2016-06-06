@@ -41,6 +41,11 @@ typedef struct _fcgi_params{
 	char value[512];
 }fcgi_params;
 
+typedef enum requestMethod
+{
+	GET,
+	POST
+}RequestMethod;
 int buildPacket(char type, char *content /*in*/, int content_len, unsigned short requestId, char *retval /*out*/, int *retval_len/*out*/);
 
 int buildNvpair(char *name /*in*/, char *value /*in*/, char *retval /*out*/, int *retval_len /*out*/);

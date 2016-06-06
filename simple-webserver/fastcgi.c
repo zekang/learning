@@ -3,7 +3,7 @@
 #include"fastcgi.h"
 #include<WinSock2.h>
 #pragma comment(lib,"ws2_32.lib")
-
+#define itoa _itoa
 int buildPacket(char type, char *content /*in*/,int content_len, unsigned short requestId, char *retval /*out*/,int *retval_len/*out*/)
 {
 	fcgi_header head;
@@ -79,7 +79,7 @@ int buildNvpair(char *name /*in*/, char *value /*in*/, char *retval /*out*/,int 
 }
 
 
-int main(int argc, char *argv[])
+int handle_php(char *host, int port, RequestMethod method,char *path,char *queryString,char *postData,char *output,int *output_len)
 {
 	WSADATA wsaData;
 	struct sockaddr_in serv_addr;
@@ -87,7 +87,8 @@ int main(int argc, char *argv[])
 	char sendBuf[204800], buf[102400] = { 0 };
 	char content[] = { 0, FCGI_RESPONDER, 0, 0, 0, 0, 0, 0 };
 	char paramBuf[1024];
-	int buf_len, pos=0,param_pos=0;
+	int buf_len, pos=0,param_pos=0,offset=0;
+	char tmpBuf[32] = { 0 };
 	fcgi_header head = { 0 };
 	int response_len = 0;
 	if (WSAStartup(MAKEWORD(2, 2), &wsaData)){
@@ -107,27 +108,33 @@ int main(int argc, char *argv[])
 	buildPacket(FCGI_BEGIN_REQUEST, content , sizeof(content), 1, buf, &buf_len);
 	memcpy(sendBuf + pos, buf, buf_len);
 	pos += buf_len;
-	
-	buildNvpair("REQUEST_METHOD", "POST", buf, &buf_len);
+	if (method == POST){
+		buildNvpair("REQUEST_METHOD", "POST", buf, &buf_len);
+	}
+	else{
+		buildNvpair("REQUEST_METHOD", "GET", buf, &buf_len);
+	}
 	memcpy(paramBuf + param_pos, buf, buf_len);
 	param_pos += buf_len;
 
-	buildNvpair("SCRIPT_FILENAME", "d:/www/a.php", buf, &buf_len);
-	memcpy(paramBuf + param_pos, buf, buf_len);
-	param_pos += buf_len;
-
-	buildNvpair("QUERY_STRING", "a=1&b=2", buf, &buf_len);
-	memcpy(paramBuf + param_pos, buf, buf_len);
-	param_pos += buf_len;
-
-	buildNvpair("CONTENT_TYPE", "application/x-www-form-urlencoded", buf, &buf_len);
-	memcpy(paramBuf + param_pos, buf, buf_len);
-	param_pos += buf_len;
-
-	buildNvpair("CONTENT_LENGTH", "7", buf, &buf_len);
+	buildNvpair("SCRIPT_FILENAME", path, buf, &buf_len);
 	memcpy(paramBuf + param_pos, buf, buf_len);
 	param_pos += buf_len;
 	
+	if (queryString != NULL){
+		buildNvpair("QUERY_STRING", queryString, buf, &buf_len);
+		memcpy(paramBuf + param_pos, buf, buf_len);
+		param_pos += buf_len;
+	}
+	if (method == POST && postData != NULL){
+		buildNvpair("CONTENT_TYPE", "application/x-www-form-urlencoded", buf, &buf_len);
+		memcpy(paramBuf + param_pos, buf, buf_len);
+		param_pos += buf_len;
+		itoa(strlen(postData), tmpBuf, 10);
+		buildNvpair("CONTENT_LENGTH", tmpBuf, buf, &buf_len);
+		memcpy(paramBuf + param_pos, buf, buf_len);
+		param_pos += buf_len;
+	}
 	buildNvpair("PATH_INFO", "/", buf, &buf_len);
 	memcpy(paramBuf + param_pos, buf, buf_len);
 	param_pos += buf_len;
@@ -142,24 +149,43 @@ int main(int argc, char *argv[])
 	memcpy(sendBuf + pos, buf, buf_len);
 	pos += buf_len;
 	
-	buildPacket(FCGI_STDIN, "c=3&d=4", 7, 1, buf, &buf_len);
-	memcpy(sendBuf + pos, buf, buf_len);
-	pos += buf_len;
-
+	if (method == POST && postData != NULL){
+		buildPacket(FCGI_STDIN, postData, strlen(postData), 1, buf, &buf_len);
+		memcpy(sendBuf + pos, buf, buf_len);
+		pos += buf_len;
+	}
 	send(socketCli, sendBuf, pos, 0);
 	do{
 		if (recv(socketCli, (char *)&head, sizeof(head), 0) == 0){
 			break;
 		}
-
+		
 		response_len = ((head.contentLengthB1) << 8) + head.contentLengthB0;
 		recv(socketCli, buf, response_len, 0);
 		buf[response_len] = 0;
-		printf("%s",buf);
+		if (head.type != FCGI_STDERR){
+		//	printf("%s", buf);
+			memcpy(output + offset, buf, response_len);
+			offset += response_len;
+		}
+		if (head.paddingLength > 0){
+			recv(socketCli, buf, head.paddingLength, 0);
+		}
 		if (head.type == FCGI_END_REQUEST){
 			break;
 		}
 	} while (1);
+	*output_len = offset;
+	return 0;
+}
+
+int main()
+{
+	char buf[102400];
+	int buf_len = 0;
+	handle_php("127.0.0.1", 9000, POST, "d:/www/a.php", "a=1&b=2", "c=3&d=4", buf,&buf_len);
+	buf[buf_len] = 0;
+	puts(buf);
 	system("pause");
 	return 0;
 }
