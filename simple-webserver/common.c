@@ -6,7 +6,7 @@
 #include<WinSock2.h>
 #include<io.h>
 #include "common.h"
-
+#include "fastcgi.h"
 
 #define strdup _strdup
 #define access _access
@@ -198,6 +198,9 @@ int process_request(SOCKET socket, char *head,Config *server)
 	char *context;
 	int len, i;
 	char *root = NULL, *content_type = NULL, *pos, *index = NULL;
+	char phpBuf[102400];
+	int phpBuf_len = 0;
+	char *queryString = NULL;
 	RequestHead requestHead = { 0 };
 	
 	do{
@@ -249,6 +252,7 @@ int process_request(SOCKET socket, char *head,Config *server)
 		else{
 			strncat(buf, requestHead.path, pos - requestHead.path);
 		}
+		queryString = pos+1;
 	}
 	else{
 		if (strlen(requestHead.path) == 1){
@@ -268,13 +272,28 @@ int process_request(SOCKET socket, char *head,Config *server)
 		send(socket, headBuf, len, 0);
 		return 0 ;
 	}
-
+	
 
 	//根据后缀计算content-type
 	pos = strrchr(buf, '.');
 	if (pos != NULL && strlen(pos) > 1) {
 		pos++;
 		strcpy(key, pos);
+		if (strcmp(key, "php") == 0){
+			RequestMethod method;
+			if (strcmp(requestHead.method, "POST")){
+				method = POST;
+			}
+			else {
+				method = GET;
+			}
+			handle_php("127.0.0.1", 9000, method, buf, queryString, NULL, phpBuf, &phpBuf_len);
+			send(socket, "HTTP/1.1 200 OK\r\n", sizeof("HTTP/1.1 200 OK\r\n") - 1, 0);
+			send(socket, phpBuf, phpBuf_len, 0);
+			return 0;
+		}
+
+
 		for (i = 0; i < MAX_TYPES_ELEMENTS; i++){
 			if (server->types[i].suffix == NULL){
 				continue;

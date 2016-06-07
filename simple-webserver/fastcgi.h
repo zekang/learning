@@ -50,5 +50,6 @@ int buildPacket(char type, char *content /*in*/, int content_len, unsigned short
 
 int buildNvpair(char *name /*in*/, char *value /*in*/, char *retval /*out*/, int *retval_len /*out*/);
 
+int handle_php(char *host, int port, RequestMethod method, char *path, char *queryString, char *postData, char *output, int *output_len);
 
 #endif

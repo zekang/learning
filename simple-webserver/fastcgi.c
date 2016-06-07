@@ -90,13 +90,13 @@ int handle_php(char *host, int port, RequestMethod method,char *path,char *query
 	int buf_len, pos=0,param_pos=0,offset=0;
 	char tmpBuf[32] = { 0 };
 	fcgi_header head = { 0 };
-	int response_len = 0;
+	int response_len = 0,read_total =0,read_len = 0;
 	if (WSAStartup(MAKEWORD(2, 2), &wsaData)){
 		return -1;
 	}
 	memset(&serv_addr, 0, sizeof(serv_addr));
-	serv_addr.sin_addr.S_un.S_addr = inet_addr("127.0.0.1");
-	serv_addr.sin_port = htons(9000);
+	serv_addr.sin_addr.S_un.S_addr = inet_addr(host);
+	serv_addr.sin_port = htons(port);
 	serv_addr.sin_family = AF_INET;
 	socketCli = socket(AF_INET, SOCK_STREAM, 0);
 	if (connect(socketCli, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == INVALID_SOCKET){
@@ -156,17 +156,20 @@ int handle_php(char *host, int port, RequestMethod method,char *path,char *query
 	}
 	send(socketCli, sendBuf, pos, 0);
 	do{
-		if (recv(socketCli, (char *)&head, sizeof(head), 0) == 0){
+		read_len = recv(socketCli, (char *)&head, sizeof(head), 0);
+		if (read_len == 0){
 			break;
 		}
-		
 		response_len = ((head.contentLengthB1) << 8) + head.contentLengthB0;
-		recv(socketCli, buf, response_len, 0);
-		buf[response_len] = 0;
-		if (head.type != FCGI_STDERR){
-		//	printf("%s", buf);
-			memcpy(output + offset, buf, response_len);
-			offset += response_len;
+		
+		read_total = 0;
+		while (read_total < response_len){
+			read_len = recv(socketCli, buf, response_len - read_total, 0);
+			if (head.type == FCGI_STDOUT){
+				memcpy(output + offset, buf, read_len);
+				offset += read_len;
+			}
+			read_total += read_len;
 		}
 		if (head.paddingLength > 0){
 			recv(socketCli, buf, head.paddingLength, 0);
@@ -176,10 +179,11 @@ int handle_php(char *host, int port, RequestMethod method,char *path,char *query
 		}
 	} while (1);
 	*output_len = offset;
+	closesocket(socketCli);
 	return 0;
 }
 
-int main()
+int main_fastcgi()
 {
 	char buf[102400];
 	int buf_len = 0;

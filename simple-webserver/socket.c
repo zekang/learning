@@ -88,9 +88,8 @@ int run(Config *config)
 	return 0;
 }
 
-int main_socket(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
-	//run();
 	int ret;
 	char *path = "D:\\whq\\learning\\socket\\Debug\\http.conf";
 	Config server = { 0 };
