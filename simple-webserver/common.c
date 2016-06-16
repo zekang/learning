@@ -281,15 +281,23 @@ int process_request(SOCKET socket, char *head,Config *server)
 		strcpy(key, pos);
 		if (strcmp(key, "php") == 0){
 			RequestMethod method;
-			if (strcmp(requestHead.method, "POST")){
+			if (strcmp(requestHead.method, "POST")==0){
 				method = POST;
 			}
 			else {
 				method = GET;
 			}
-			handle_php("127.0.0.1", 9000, method, buf, queryString, NULL, phpBuf, &phpBuf_len);
-			send(socket, "HTTP/1.1 200 OK\r\n", sizeof("HTTP/1.1 200 OK\r\n") - 1, 0);
-			send(socket, phpBuf, phpBuf_len, 0);
+			handle_php("127.0.0.1", 9000, method, buf, root, requestHead.host, queryString, NULL, phpBuf, &phpBuf_len);
+			pos = strstr(phpBuf, "Status:");
+			if (pos==NULL){
+				send(socket, "HTTP/1.1 200 OK\r\n", sizeof("HTTP/1.1 200 OK\r\n") - 1, 0);
+				send(socket, phpBuf, phpBuf_len, 0);
+			}
+			else{
+				send(socket, "HTTP/1.1", sizeof("HTTP/1.1") - 1, 0);
+				send(socket, phpBuf + strlen("Status:"), phpBuf_len - strlen("Status:"), 0);
+			}
+			
 			return 0;
 		}
 

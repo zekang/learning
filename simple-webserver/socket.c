@@ -91,7 +91,8 @@ int run(Config *config)
 int main(int argc, char *argv[])
 {
 	int ret;
-	char *path = "D:\\whq\\learning\\socket\\Debug\\http.conf";
+	char *path = "D:/whq/learning/socket/Release/http.conf";
+
 	Config server = { 0 };
 	if (argc > 1){
 		path = argv[1];

@@ -79,7 +79,7 @@ int buildNvpair(char *name /*in*/, char *value /*in*/, char *retval /*out*/,int 
 }
 
 
-int handle_php(char *host, int port, RequestMethod method,char *path,char *queryString,char *postData,char *output,int *output_len)
+int handle_php(char *host, int port, RequestMethod method, char *path, char *basepath, char *server_name,char *queryString, char *postData, char *output, int *output_len)
 {
 	WSADATA wsaData;
 	struct sockaddr_in serv_addr;
@@ -120,6 +120,15 @@ int handle_php(char *host, int port, RequestMethod method,char *path,char *query
 	buildNvpair("SCRIPT_FILENAME", path, buf, &buf_len);
 	memcpy(paramBuf + param_pos, buf, buf_len);
 	param_pos += buf_len;
+
+	buildNvpair("SCRIPT_NAME", path+strlen(basepath), buf, &buf_len);
+	memcpy(paramBuf + param_pos, buf, buf_len);
+	param_pos += buf_len;
+
+	buildNvpair("SERVER_NAME", server_name, buf, &buf_len);
+	memcpy(paramBuf + param_pos, buf, buf_len);
+	param_pos += buf_len;
+	
 	
 	if (queryString != NULL){
 		buildNvpair("QUERY_STRING", queryString, buf, &buf_len);
@@ -187,7 +196,7 @@ int main_fastcgi()
 {
 	char buf[102400];
 	int buf_len = 0;
-	handle_php("127.0.0.1", 9000, POST, "d:/www/a.php", "a=1&b=2", "c=3&d=4", buf,&buf_len);
+	handle_php("127.0.0.1", 9000, POST, "d:/www/a.php", "d:/www/","localhost","a=1&b=2", "c=3&d=4", buf,&buf_len);
 	buf[buf_len] = 0;
 	puts(buf);
 	system("pause");
